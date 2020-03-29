@@ -1,5 +1,7 @@
 package rozi.encryptor;
 
+import rozi.converter.HexConverter;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,10 +11,64 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
     private long modulo = (long) Math.pow(2, 32);
 
     // Subkeys initialisation with digits of pi.
-    String[] Subkeys = { "243f6a88", "85a308d3", "13198a2e", "03707344", "a4093822",
-            "299f31d0", "082efa98", "ec4e6c89", "452821e6", "38d01377",
-            "be5466cf", "34e90c6c", "c0ac29b7", "c97c50dd", "3f84d5b5",
+    private String[] ORIGINAL_SUBKEYS = { "243f6a88", "85a308d3", "13198a2e", "03707344", "a4093822", "299f31d0",
+            "082efa98", "ec4e6c89", "452821e6", "38d01377", "be5466cf", "34e90c6c", "c0ac29b7", "c97c50dd", "3f84d5b5",
             "b5470917", "9216d5d9", "8979fb1b" };
+
+    // Subkeys initialisation with digits of pi.
+    private String[] Subkeys;
+
+    public BlowfishSaveEnryptor() {
+
+        // 32-448 bits, but multiplications of 16! (8-112 hexes)
+        String key = "superklucznajlepszynaświecie";
+        // 64-bit (16 hexes)
+        String plain = "TajneHasło!ążźćó€żćźTajneHasło!ążźćó€żćźTajneHasło!ążźćó€żćźTajneHasło!ążźćó€żćźTajneHasło!ążźćó€żćźTajneHasło!ążźćó€żćź";
+
+        String encrypted = encrypt(plain, key);
+        String decrypted = decrypt(encrypted, key);
+        System.out.println(plain);
+        System.out.println(encrypted);
+        System.out.println(decrypted);
+    }
+
+    public static void main(String args[]) {
+        new BlowfishSaveEnryptor();
+    }
+
+    private void fillWithLeadingEmptyCharacters(StringBuilder hexString, int divider) {
+        while (hexString.length() % divider != 0) {
+            hexString.insert(0, '0');
+        }
+    }
+
+    private String encrypt(String plainText, String key) {
+        generateSubkeys(key);
+
+        StringBuilder hex = new StringBuilder(HexConverter.stringToHex(plainText));
+        fillWithLeadingEmptyCharacters(hex, 16);
+
+        StringBuilder encrypted = new StringBuilder();
+        for (int i = 0; i < hex.length() / 16; i++) {
+            encrypted.append(encrypt(hex.substring(i * 16, (i + 1) * 16)));
+        }
+        return encrypted.toString();
+    }
+
+    private String decrypt(String encryptedText, String key) {
+        generateSubkeys(key);
+
+        StringBuilder decrypted = new StringBuilder();
+        for (int i = 0; i < encryptedText.length() / 16; i++) {
+            decrypted.append(decrypt(encryptedText.substring(i * 16, (i + 1) * 16)));
+        }
+
+        while (decrypted.charAt(0) == '0') {
+            decrypted.deleteCharAt(0);
+        }
+
+        return HexConverter.hexToString(decrypted.toString());
+    }
 
     @Override
     public String encrypt(final File input) {
@@ -34,6 +90,41 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
             e.printStackTrace();
             return null;
         }
+    }
+
+    // Encrypts plaintext block of 64 bits (16 hexes)
+    private String encrypt(String hexString) {
+        if (hexString.length() != 16) {
+            throw new IllegalArgumentException("String to be encrypted is not 64-bit sized!");
+        }
+        for (int i = 0; i < 16; i++) {
+            hexString = round(i, hexString);
+        }
+
+        // Last step
+        String s1 = hexString.substring(0, 8);
+        String s2 = hexString.substring(8, 16);
+        s1 = xor(s1, Subkeys[16]);
+        s2 = xor(s2, Subkeys[17]);
+
+        // Order changed again!
+        return s2 + s1;
+    }
+
+    // Decrypt cipherText into hex string
+    private String decrypt(String hexString) {
+        for (int i = 17; i > 1; i--) {
+            hexString = round(i, hexString);
+        }
+
+        // Last step
+        String s1 = hexString.substring(0, 8);
+        String s2 = hexString.substring(8, 16);
+        s1 = xor(s1, Subkeys[1]);
+        s2 = xor(s2, Subkeys[0]);
+
+        // Order changed!
+        return s2 + s1;
     }
 
     // Converts plaintext to binary representation
@@ -66,8 +157,9 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
         // Decimal => Hexadecimal
         StringBuilder hexOutput = new StringBuilder(Long.toHexString(num));
         // If there is length mismatch between binary representation and hexadecimal output, we must even length with leading zeros
-        while (hexOutput.length() < (binaryString.length() / 4))
+        while (hexOutput.length() < (binaryString.length() / 4)) {
             hexOutput.insert(0, "0");
+        }
         return hexOutput.toString();
     }
 
@@ -79,8 +171,9 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
         StringBuilder ans = new StringBuilder("");
 
         // For each 2 Bits cast them to integers, xor them and append to result string
-        for (int i = 0; i < bin1.length(); i++)
+        for (int i = 0; i < bin1.length(); i++) {
             ans.append(((bin1.charAt(i) - 48) ^ (bin2.charAt(i) - 48)));
+        }
 
         return binToHex(ans.toString());
     }
@@ -98,8 +191,9 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
         hexResult = Long.toHexString(val1);
 
         // If hex is long enough, return it
-        if(hexResult.length() == 8)
+        if (hexResult.length() == 8) {
             return hexResult;
+        }
 
         // Otherwise add leading zeros
         hexResult = "00000000" + hexResult;
@@ -112,7 +206,7 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
 
         // divide 32bits into four 8-bit string
         for (int i = 0; i < 4; i++) {
-            int col = Integer.parseUnsignedInt(hexToBin(plainText.substring(i*2, i*2 + 2)), 2);
+            int col = Integer.parseUnsignedInt(hexToBin(plainText.substring(i * 2, i * 2 + 2)), 2);
             a[i] = SubstitutionBoxes.boxes[i][col];
         }
         String result = moduloAddHexes(a[0], a[1]);
@@ -123,11 +217,18 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
 
     // Generate subkeys
     private void generateSubkeys(String key) {
-        if(key.length() % 8 != 0)
+        StringBuilder keyBuilder = new StringBuilder(HexConverter.stringToHex(key));
+        fillWithLeadingEmptyCharacters(keyBuilder, 8);
+        String encodedKey = keyBuilder.toString();
+        Subkeys = new String[ORIGINAL_SUBKEYS.length];
+        if (encodedKey.length() % 8 != 0) {
             throw new IllegalArgumentException("Cannot generate subkeys for key not being multiplication of 32-bits");
-        for (int i = 0, j = 0; i < Subkeys.length; i++, j = (j + 8) % key.length())
+        }
+
+        for (int i = 0, j = 0; i < ORIGINAL_SUBKEYS.length; i++, j = (j + 8) % encodedKey.length()) {
             // xor-ing 32-bit parts of the key with initial subkeys.
-            Subkeys[i] = xor(Subkeys[i], key.substring(j, j + 8));
+            Subkeys[i] = xor(ORIGINAL_SUBKEYS[i], encodedKey.substring(j, j + 8));
+        }
     }
 
     // round function
@@ -148,56 +249,5 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
 
         // Order is changed!
         return s2 + s1;
-    }
-
-    // Encrypts plaintext block of 64 bits (16 hexes)
-    private String encrypt(String hexString) {
-        if(hexString.length() != 16)
-            throw new IllegalArgumentException("String to be encrypted is not 64-bit sized!");
-        for (int i = 0; i < 16; i++)
-            hexString = round(i, hexString);
-
-        // Last step
-        String s1 = hexString.substring(0, 8);
-        String s2 = hexString.substring(8, 16);
-        s1 = xor(s1, Subkeys[16]);
-        s2 = xor(s2, Subkeys[17]);
-
-        // Order changed again!
-        return s2 + s1;
-    }
-
-    // Decrypt cipherText into hex string
-    private String decrypt(String plainText) {
-        for (int i = 17; i > 1; i--)
-            plainText = round(i, plainText);
-
-        // Last step
-        String s1 = plainText.substring(0, 8);
-        String s2 = plainText.substring(8, 16);
-        s1 = xor(s1, Subkeys[1]);
-        s2 = xor(s2, Subkeys[0]);
-
-        // Order changed!
-        return s2 + s1;
-    }
-
-    public BlowfishSaveEnryptor() {
-
-        // 64-bit
-        String plainText = "abc12419b2c6e9f7";
-        String key = "153be4a3c5c670e3";
-
-        generateSubkeys(key);
-
-        String cipherText = encrypt(plainText);
-        System.out.println("Plain Text: " + plainText);
-        System.out.println("Cipher Text: " + cipherText);
-        plainText = decrypt(cipherText);
-        System.out.println("Plain Text: " + plainText);
-    }
-
-    public static void main(String args[]) {
-        new BlowfishSaveEnryptor();
     }
 }
