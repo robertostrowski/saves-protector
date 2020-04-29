@@ -1,28 +1,18 @@
 package rozi.gui;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.JTextComponent;
-
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class GUI extends JFrame {
 
     private JRadioButton blowfishRadioButton;
     private JRadioButton twofishRadioButton;
     private JButton okButton;
-    private JTextField inputFileField;
-    private JTextField keyFileField;
-    private JButton inputFileButton;
-    private JButton keyFileButton;
+    private JTextField keyField;
     public JPanel rootPanel;
     private JRadioButton encryptButton;
     private JRadioButton decryptButton;
-    private JTextPane outputTextPane;
+    private JTextArea outputTextArea;
+    private JTextArea inputTextArea;
 
     private GuiActionHandler actionHandler;
 
@@ -41,9 +31,6 @@ public class GUI extends JFrame {
         pack();
         setVisible(true);
 
-        inputFileButton.addActionListener(filePickerActionListener(inputFileField));
-        keyFileButton.addActionListener(filePickerActionListener(keyFileField));
-
         ButtonGroup algorithmButtonGroup = new ButtonGroup();
         algorithmButtonGroup.add(blowfishRadioButton);
         algorithmButtonGroup.add(twofishRadioButton);
@@ -53,20 +40,20 @@ public class GUI extends JFrame {
         encryptMethodButtonGroup.add(decryptButton);
 
         okButton.addActionListener(e -> actionHandler.okClicked(
-                new GuiState(selectedAlgorithm(), selectedOperation(), selectedInputFile(), selectedKeyFile())));
+                new GuiState(selectedAlgorithm(), selectedOperation(), getKey(), getInput())));
     }
 
-    private File selectedInputFile() {
-        return Paths.get(inputFileField.getText()).toFile();
+    private String getInput(){
+        return inputTextArea.getText();
     }
 
-    private File selectedKeyFile() {
-        return Paths.get(keyFileField.getText()).toFile();
+    private String getKey(){
+        return keyField.getText();
     }
 
     private GuiState.Operation selectedOperation() {
         if (encryptButton.isSelected()) {
-            return GuiState.Operation.ENCRUPTION;
+            return GuiState.Operation.ENCRYPTION;
         }
         else {
             return GuiState.Operation.DECRYPTION;
@@ -82,22 +69,7 @@ public class GUI extends JFrame {
         }
     }
 
-    private ActionListener filePickerActionListener(JTextComponent component) {
-
-        return e -> {
-            JFileChooser fc = new JFileChooser();
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Save files", "yaml", "xml", "json");
-            fc.setFileFilter(filter);
-            int returnVal = fc.showOpenDialog(GUI.this);
-
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File file = fc.getSelectedFile();
-                component.setText(file.getAbsolutePath());
-            }
-        };
-    }
-
-    public void setResultPreview(String output) {
-        outputTextPane.setText(output);
+    public void setOutput(final String output) {
+        outputTextArea.setText(output);
     }
 }

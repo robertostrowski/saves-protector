@@ -2,11 +2,7 @@ package rozi.encryptor;
 
 import rozi.converter.HexConverter;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-
-public class BlowfishSaveEnryptor implements SaveEnryptor {
+public class BlowfishSaveEncryptor implements SaveEncryptor {
 
     private long modulo = (long) Math.pow(2, 32);
 
@@ -18,8 +14,11 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
     // Subkeys initialisation with digits of pi.
     private String[] Subkeys;
 
-    public BlowfishSaveEnryptor() {
-
+    public BlowfishSaveEncryptor() {
+        // sorry igor ale potrzebuje tego konstruktora
+        if (true){
+            return;
+        }
         // 32-448 bits, but multiplications of 16! (8-112 hexes)
         String key = "superklucznajlepszynaświecie";
         // 64-bit (16 hexes)
@@ -33,7 +32,7 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
     }
 
     public static void main(String args[]) {
-        new BlowfishSaveEnryptor();
+        new BlowfishSaveEncryptor();
     }
 
     private void fillWithLeadingEmptyCharacters(StringBuilder hexString, int divider) {
@@ -42,7 +41,8 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
         }
     }
 
-    private String encrypt(String plainText, String key) {
+    @Override
+    public String encrypt(String plainText, String key) {
         generateSubkeys(key);
 
         StringBuilder hex = new StringBuilder(HexConverter.stringToHex(plainText));
@@ -55,7 +55,8 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
         return encrypted.toString();
     }
 
-    private String decrypt(String encryptedText, String key) {
+    @Override
+    public String decrypt(String encryptedText, String key) {
         generateSubkeys(key);
 
         StringBuilder decrypted = new StringBuilder();
@@ -68,28 +69,6 @@ public class BlowfishSaveEnryptor implements SaveEnryptor {
         }
 
         return HexConverter.hexToString(decrypted.toString());
-    }
-
-    @Override
-    public String encrypt(final File input) {
-        try {
-            return String.join("\n", Files.readAllLines(input.toPath()));
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    @Override
-    public String decrypt(final File input) {
-        try {
-            return String.join("\n", Files.readAllLines(input.toPath()));
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     // Encrypts plaintext block of 64 bits (16 hexes)

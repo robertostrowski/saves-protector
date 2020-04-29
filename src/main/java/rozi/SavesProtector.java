@@ -1,11 +1,16 @@
 package rozi;
 
-import rozi.encryptor.BlowfishSaveEnryptor;
-import rozi.encryptor.SaveEnryptor;
-import rozi.encryptor.twofish.TwofishSaveEnryptor;
+import java.util.function.BiFunction;
+
+import rozi.encryptor.BlowfishSaveEncryptor;
+import rozi.encryptor.SaveEncryptor;
+import rozi.encryptor.twofish.TwofishSaveEncryptor;
 import rozi.gui.GUI;
 import rozi.gui.GuiActionHandler;
 import rozi.gui.GuiState;
+
+import static rozi.gui.GuiState.EnryptionAlgorithm.BLOWFISH;
+import static rozi.gui.GuiState.Operation.ENCRYPTION;
 
 public class SavesProtector implements GuiActionHandler {
 
@@ -17,27 +22,20 @@ public class SavesProtector implements GuiActionHandler {
 
     @Override
     public void okClicked(final GuiState guiState) {
-        final SaveEnryptor saveEnryptor;
-        switch (guiState.getSelectedAlgorithm()) {
-            default:
-            case TWOFISH:
-                saveEnryptor = new TwofishSaveEnryptor();
-                break;
-            case BLOWFISH:
-                saveEnryptor = new BlowfishSaveEnryptor();
-                break;
-        }
-        final String output;
-        switch (guiState.getSelectedOperation()) {
-            default:
-            case DECRYPTION:
-                output = saveEnryptor.decrypt(guiState.getInputFile());
+        GuiState.Operation operation = guiState.getSelectedOperation();
+        GuiState.EnryptionAlgorithm algorithm = guiState.getSelectedAlgorithm();
+        String input = guiState.getInput();
+        String key = guiState.getKey();
 
-                break;
-            case ENCRUPTION:
-                output = saveEnryptor.encrypt(guiState.getInputFile());
-                break;
+        final SaveEncryptor encryptor = algorithm == BLOWFISH ? new BlowfishSaveEncryptor() : new TwofishSaveEncryptor();
+        BiFunction<String, String, String> encryptionOperation =
+                operation == ENCRYPTION ? encryptor::encrypt : encryptor::decrypt;
+        try {
+            String output = encryptionOperation.apply(input, key);
+            gui.setOutput(output);
+        } catch (Exception e){
+            gui.setOutput("Wystąpił błąd :(");
+            e.printStackTrace();
         }
-        gui.setResultPreview(output);
     }
 }

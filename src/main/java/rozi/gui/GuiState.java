@@ -3,22 +3,20 @@ package rozi.gui;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
-import java.io.File;
-
 @Value
 @AllArgsConstructor
 public class GuiState {
 
-    private EnryptionAlgorithm selectedAlgorithm;
-    private Operation selectedOperation;
-    private File inputFile;
-    private File keyFile;
+    EnryptionAlgorithm selectedAlgorithm;
+    Operation selectedOperation;
+    String key;
+    String input;
 
     public enum EnryptionAlgorithm {
         BLOWFISH, TWOFISH
     }
 
     public enum Operation {
-        ENCRUPTION, DECRYPTION
+        ENCRYPTION, DECRYPTION
     }
 }

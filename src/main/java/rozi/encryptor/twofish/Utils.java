@@ -1,5 +1,7 @@
 package rozi.encryptor.twofish;
 
+import javax.xml.bind.DatatypeConverter;
+
 public class Utils {
 
     public static int bytePart0(int x) {
@@ -56,5 +58,9 @@ public class Utils {
             hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        return DatatypeConverter.parseHexBinary(s);
     }
 }
