@@ -2,13 +2,10 @@ package rozi;
 
 import rozi.encryptor.BlowfishSaveEnryptor;
 import rozi.encryptor.SaveEnryptor;
-import rozi.encryptor.TwofishSaveEnryptor;
+import rozi.encryptor.twofish.TwofishSaveEnryptor;
 import rozi.gui.GUI;
 import rozi.gui.GuiActionHandler;
 import rozi.gui.GuiState;
-
-import java.io.IOException;
-import java.nio.file.Files;
 
 public class SavesProtector implements GuiActionHandler {
 
