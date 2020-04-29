@@ -27,6 +27,11 @@ public class SavesProtector implements GuiActionHandler {
         String input = guiState.getInput();
         String key = guiState.getKey();
 
+        if (input == null || input.isEmpty() || key == null || key.isEmpty()){
+            gui.setOutput("System: Klucz i wiadomość muszą być niepuste");
+            return;
+        }
+
         final SaveEncryptor encryptor = algorithm == BLOWFISH ? new BlowfishSaveEncryptor() : new TwofishSaveEncryptor();
         BiFunction<String, String, String> encryptionOperation =
                 operation == ENCRYPTION ? encryptor::encrypt : encryptor::decrypt;
@@ -34,7 +39,7 @@ public class SavesProtector implements GuiActionHandler {
             String output = encryptionOperation.apply(input, key);
             gui.setOutput(output);
         } catch (Exception e){
-            gui.setOutput("Wystąpił błąd :(");
+            gui.setOutput("System: Wystąpił błąd :(");
             e.printStackTrace();
         }
     }
